@@ -70,7 +70,7 @@ cd backend
 .venv\Scripts\python.exe -m pytest tests/ -v
 ```
 
-Current coverage: **90 tests passing** (models, price parser, unit parser, text cleaning, brand parser).
+Current coverage: **109 tests passing** (models, price/unit/text/brand parsers, intent extraction).
 
 ## Development phases
 
@@ -79,8 +79,8 @@ Current coverage: **90 tests passing** (models, price parser, unit parser, text 
 | 0 | ✅ Done | Project setup — FastAPI, React+Vite+Tailwind, /api/health |
 | 1 | ✅ Done | Pydantic models — ProductCandidate, ShoppingIntent, UserPreferences, CartItem |
 | 2 | ✅ Done | Deterministic parsers — price, unit (g→kg, ml→l), text cleaning, brand extraction |
-| 3 | ⬜ Next | Intent extraction — LLM call, Pydantic validation, prompt template |
-| 4 | ⬜ | Scraper base architecture — BaseScraper, Playwright setup, HTML/screenshot saving |
+| 3 | ✅ Done | Intent extraction — LLM call, Pydantic validation, prompt template, POST /api/chat |
+| 4 | ⬜ Next | Scraper base architecture — BaseScraper, Playwright setup, HTML/screenshot saving |
 | 5 | ⬜ | Store scrapers — Plaza Vea, Metro, Tottus, Vivanda |
 | 6 | ⬜ | Pre-filtering engine — relevance scoring, negative keywords |
 | 7 | ⬜ | Ranking engine + cart builder — required units, price scoring, alternatives |

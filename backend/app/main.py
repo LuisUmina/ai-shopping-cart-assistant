@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import routes_health
+from app.api import routes_chat, routes_health
 from app.config import get_settings
 from app.utils.logging_utils import configure_logging, get_logger
 
@@ -22,6 +22,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(routes_health.router, prefix="/api")
+    app.include_router(routes_chat.router, prefix="/api")
     logger.info("%s started (provider=%s)", settings.app_name, settings.llm_provider)
     return app
 

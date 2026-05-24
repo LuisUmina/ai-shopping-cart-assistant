@@ -70,7 +70,7 @@ cd backend
 .venv\Scripts\python.exe -m pytest tests/ -v
 ```
 
-Current coverage: **172 tests passing** (models, parsers, intent extraction, scraper base, store scrapers).
+Current coverage: **265 tests passing** (models, parsers, intent extraction, scraper base, store scrapers, filtering, ranking, cart builder).
 
 ## Development phases
 
@@ -82,8 +82,8 @@ Current coverage: **172 tests passing** (models, parsers, intent extraction, scr
 | 3 | ✅ Done | Intent extraction — LLM call, Pydantic validation, prompt template, POST /api/chat |
 | 4 | ✅ Done | Scraper base — BaseScraper (ABC + async ctx manager), Playwright, artifact saving |
 | 5 | ✅ Done | Store scrapers — Plaza Vea, Metro, Tottus, Vivanda |
-| 6 | ⬜ Next | Pre-filtering engine — relevance scoring, negative keywords |
-| 7 | ⬜ | Ranking engine + cart builder — required units, price scoring, alternatives |
-| 8 | ⬜ | LLM final reasoning — compact candidate input, validated cart output |
+| 6 | ✅ Done | Pre-filtering engine — relevance scoring, negative keywords |
+| 7 | ✅ Done | Ranking engine + cart builder — required units, price scoring, alternatives |
+| 8 | ⬜ Next | LLM final reasoning — compact candidate input, validated cart output |
 | 9 | ⬜ | Web interface — ChatPanel, PreferencesPanel, CartSummary, ProductCard |
 | 10 | ⬜ | Demo scenario — end-to-end demo with real products |

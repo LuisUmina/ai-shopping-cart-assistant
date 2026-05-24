@@ -63,6 +63,27 @@ npm run dev
 
 App: http://localhost:5173 (shows the live backend health status).
 
+## Running tests
+
+```bash
+cd backend
+.venv\Scripts\python.exe -m pytest tests/ -v
+```
+
+Current coverage: **90 tests passing** (models, price parser, unit parser, text cleaning, brand parser).
+
 ## Development phases
 
-The project is built in phases (see the plan). **Phase 0 (setup) is complete:** folder structure, FastAPI health endpoint, frontend base UI, and shared configuration.
+| Phase | Status | Description |
+|---|---|---|
+| 0 | ✅ Done | Project setup — FastAPI, React+Vite+Tailwind, /api/health |
+| 1 | ✅ Done | Pydantic models — ProductCandidate, ShoppingIntent, UserPreferences, CartItem |
+| 2 | ✅ Done | Deterministic parsers — price, unit (g→kg, ml→l), text cleaning, brand extraction |
+| 3 | ⬜ Next | Intent extraction — LLM call, Pydantic validation, prompt template |
+| 4 | ⬜ | Scraper base architecture — BaseScraper, Playwright setup, HTML/screenshot saving |
+| 5 | ⬜ | Store scrapers — Plaza Vea, Metro, Tottus, Vivanda |
+| 6 | ⬜ | Pre-filtering engine — relevance scoring, negative keywords |
+| 7 | ⬜ | Ranking engine + cart builder — required units, price scoring, alternatives |
+| 8 | ⬜ | LLM final reasoning — compact candidate input, validated cart output |
+| 9 | ⬜ | Web interface — ChatPanel, PreferencesPanel, CartSummary, ProductCard |
+| 10 | ⬜ | Demo scenario — end-to-end demo with real products |

@@ -1,0 +1,28 @@
+# Environment
+.env
+*.env
+!.env.example
+
+# Python
+backend/.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Node / frontend
+node_modules/
+frontend/dist/
+frontend/.env
+
+# Scraping artifacts (keep folder structure, ignore generated files)
+data/raw_html/**/*.html
+data/screenshots/**/*.png
+data/raw_json/**/*.json
+data/normalized_json/**/*.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(pip show *)",
+      "Bash(python -m venv .venv)",
+      "Bash(./.venv/Scripts/python.exe -m pip install --upgrade pip -q)",
+      "Bash(./.venv/Scripts/python.exe -m pip install -e \".[dev]\" -q)",
+      "Bash(./.venv/Scripts/python.exe -c \"from fastapi.testclient import TestClient; from app.main import app; c=TestClient\\(app\\); r=c.get\\('/api/health'\\); print\\(r.status_code, r.json\\(\\)\\)\")",
+      "Bash(npm create *)"
+    ]
+  }
+}

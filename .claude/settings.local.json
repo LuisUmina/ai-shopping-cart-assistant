@@ -7,7 +7,11 @@
       "Bash(./.venv/Scripts/python.exe -m pip install --upgrade pip -q)",
       "Bash(./.venv/Scripts/python.exe -m pip install -e \".[dev]\" -q)",
       "Bash(./.venv/Scripts/python.exe -c \"from fastapi.testclient import TestClient; from app.main import app; c=TestClient\\(app\\); r=c.get\\('/api/health'\\); print\\(r.status_code, r.json\\(\\)\\)\")",
-      "Bash(npm create *)"
+      "Bash(npm create *)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\USER\\\\Desktop\\\\Luis Angel\\\\4- WorkSpace\\\\PWC\\\\Jose Astuvilca - AI Agent \\(Supermarkets\\) v2 - Python\" -Recurse -Force | Select-Object -Property FullName | ForEach-Object { $_.FullName.Substring\\(\"C:\\\\Users\\\\USER\\\\Desktop\\\\Luis Angel\\\\4- WorkSpace\\\\PWC\\\\Jose Astuvilca - AI Agent \\(Supermarkets\\) v2 - Python\".Length\\).TrimStart\\('\\\\'\\) } | Sort-Object)",
+      "Bash(.venv\\\\Scripts\\\\python.exe -m pytest --tb=short -q)",
+      "Bash(./.venv/Scripts/python.exe -m pytest --tb=short -q)",
+      "Bash(./.venv/Scripts/python.exe -m pytest tests/test_scraping_service.py tests/test_intent_extraction.py --tb=short -q)"
     ]
   }
 }

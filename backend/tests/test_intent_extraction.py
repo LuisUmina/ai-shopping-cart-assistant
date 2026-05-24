@@ -4,7 +4,11 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from fastapi.testclient import TestClient
 
-from app.dependencies import get_intent_service
+from app.dependencies import (
+    get_cart_reasoning_service,
+    get_intent_service,
+    get_scraping_service,
+)
 from app.main import app
 from app.models.common import Priority, QuantityUnit
 from app.models.intent_models import ShoppingIntent
@@ -183,43 +187,74 @@ class TestIntentService:
 
 # ── POST /api/chat (endpoint integration) ────────────────────────────────────
 
+def _stub_scraping_service():
+    """Stub ScrapingService that returns no candidates — keeps tests offline."""
+    stub = MagicMock()
+    stub.search = AsyncMock(return_value={})
+    return stub
+
+
+def _stub_reasoning_service():
+    """Stub CartReasoningService that returns the cart unchanged — no LLM call."""
+    stub = MagicMock()
+    stub.enrich = AsyncMock(side_effect=lambda rec, intent, msg: rec)
+    return stub
+
+
 class TestChatEndpoint:
-    def _client_with_mock_service(self, json_response: str) -> TestClient:
-        """Override get_intent_service dep so no real LLM is called."""
-        mock_service = _make_service(json_response)
-        app.dependency_overrides[get_intent_service] = lambda: mock_service
+    def _client_with_mocks(self, json_response: str) -> TestClient:
+        """Override every external dependency so the endpoint runs fully offline."""
+        app.dependency_overrides[get_intent_service] = lambda: _make_service(
+            json_response
+        )
+        app.dependency_overrides[get_scraping_service] = _stub_scraping_service
+        app.dependency_overrides[get_cart_reasoning_service] = _stub_reasoning_service
         return TestClient(app)
 
     def teardown_method(self):
         app.dependency_overrides.clear()
 
     def test_returns_200_with_intent(self):
-        client = self._client_with_mock_service(VALID_INTENT_JSON)
+        client = self._client_with_mocks(VALID_INTENT_JSON)
         resp = client.post("/api/chat", json={"message": "Necesito arroz"})
         assert resp.status_code == 200
         body = resp.json()
         assert body["intent"]["shopping_intent"][0]["product_query"] == "arroz"
 
-    def test_cart_and_candidates_empty_without_scrapers(self):
-        client = self._client_with_mock_service(VALID_INTENT_JSON)
+    def test_no_candidates_produces_warning_in_cart(self):
+        """With the scraper stubbed to return nothing, cart is empty and a warning is set."""
+        client = self._client_with_mocks(VALID_INTENT_JSON)
         resp = client.post("/api/chat", json={"message": "Necesito arroz"})
         body = resp.json()
-        assert body["cart"] is None
-        assert body["candidate_products"] == {}
+        assert body["cart"] is not None
+        assert body["cart"]["cart"] == []
+        assert any("arroz" in w for w in body["cart"]["warnings"])
+        assert body["candidate_products"] == {"arroz": []}
 
     def test_invalid_intent_returns_422(self):
-        mock_service = _make_service("not json")
-        app.dependency_overrides[get_intent_service] = lambda: mock_service
+        app.dependency_overrides[get_intent_service] = lambda: _make_service("not json")
+        app.dependency_overrides[get_scraping_service] = _stub_scraping_service
+        app.dependency_overrides[get_cart_reasoning_service] = _stub_reasoning_service
         client = TestClient(app)
         resp = client.post("/api/chat", json={"message": "arroz"})
         assert resp.status_code == 422
 
     def test_missing_message_returns_422(self):
-        client = self._client_with_mock_service(VALID_INTENT_JSON)
+        client = self._client_with_mocks(VALID_INTENT_JSON)
         resp = client.post("/api/chat", json={})
         assert resp.status_code == 422
 
     def test_session_id_optional(self):
-        client = self._client_with_mock_service(VALID_INTENT_JSON)
+        client = self._client_with_mocks(VALID_INTENT_JSON)
         resp = client.post("/api/chat", json={"message": "arroz", "session_id": "abc"})
         assert resp.status_code == 200
+
+    def test_empty_intent_skips_pipeline(self):
+        """When the LLM returns no shopping items, the pipeline is skipped."""
+        empty = json.dumps({"shopping_intent": []})
+        client = self._client_with_mocks(empty)
+        resp = client.post("/api/chat", json={"message": "hola"})
+        body = resp.json()
+        assert resp.status_code == 200
+        assert body["cart"] is None
+        assert body["candidate_products"] == {}

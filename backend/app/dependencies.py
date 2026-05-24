@@ -5,8 +5,12 @@ from fastapi import Depends
 from openai import AsyncOpenAI
 
 from app.config import Settings, get_settings
+from app.services.cart_builder import CartBuilder
 from app.services.cart_reasoning_service import CartReasoningService
+from app.services.filtering_service import FilteringService
 from app.services.intent_service import IntentService
+from app.services.ranking_service import RankingService
+from app.services.scraping_service import ScrapingService
 
 _PROMPTS_DIR = Path(__file__).resolve().parents[2] / "prompts"
 
@@ -36,3 +40,25 @@ def get_cart_reasoning_service(
         model=llm.model,
         system_prompt=_load_prompt("cart_reasoning_prompt.md"),
     )
+
+
+def get_scraping_service(
+    settings: Settings = Depends(get_settings),
+) -> ScrapingService:
+    return ScrapingService(
+        data_dir=settings.data_dir,
+        headless=settings.scraper_headless,
+        timeout_ms=settings.scraper_timeout_ms,
+    )
+
+
+def get_filtering_service() -> FilteringService:
+    return FilteringService()
+
+
+def get_ranking_service() -> RankingService:
+    return RankingService()
+
+
+def get_cart_builder() -> CartBuilder:
+    return CartBuilder()

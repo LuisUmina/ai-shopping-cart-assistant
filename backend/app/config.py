@@ -39,6 +39,14 @@ class Settings(BaseSettings):
     opencode_base_url: str = ""
     opencode_model: str = ""
 
+    # Scraper
+    scraper_headless: bool = True
+    scraper_timeout_ms: int = 30_000
+
+    @property
+    def data_dir(self) -> Path:
+        return DATA_DIR
+
     def active_llm(self) -> LLMConfig:
         """Return the credentials/model for the selected provider."""
         if self.llm_provider == "opencode":

@@ -75,6 +75,47 @@ class BaseScraper(ABC):
         page.set_default_timeout(self.timeout_ms)
         return page
 
+    # ── Shared browser helpers ────────────────────────────────────────────────
+
+    async def _dismiss_popups(self, page: Page) -> None:
+        """Try to close common modal / cookie popups."""
+        selectors = [
+            "button:has-text('Aceptar')",
+            "button:has-text('Cerrar')",
+            "button:has-text('Entendido')",
+            "button:has-text('Acepto')",
+            "[aria-label='Close']",
+            ".close-button",
+            ".modal-close",
+        ]
+        for selector in selectors:
+            try:
+                btn = page.locator(selector).first
+                if await btn.is_visible(timeout=1_000):
+                    await btn.click()
+                    await page.wait_for_timeout(400)
+            except Exception:
+                pass
+
+    async def _submit_search(
+        self, page: Page, query: str, selectors: tuple[str, ...]
+    ) -> None:
+        """Find the first visible search box, fill it, and press Enter."""
+        for selector in selectors:
+            try:
+                box = page.locator(selector).first
+                if await box.is_visible(timeout=2_000):
+                    await box.click()
+                    await box.fill(query)
+                    await box.press("Enter")
+                    self.logger.debug("Search submitted via %s", selector)
+                    return
+            except Exception:
+                continue
+        raise RuntimeError(
+            f"[{self.store_id.value}] Could not find search box for query={query!r}"
+        )
+
     # ── Artifact saving ───────────────────────────────────────────────────────
 
     def _artifact_path(self, subdir: str, query: str, ext: str) -> Path:

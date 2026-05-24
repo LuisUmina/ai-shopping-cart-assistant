@@ -5,6 +5,7 @@ from fastapi import Depends
 from openai import AsyncOpenAI
 
 from app.config import Settings, get_settings
+from app.services.cart_reasoning_service import CartReasoningService
 from app.services.intent_service import IntentService
 
 _PROMPTS_DIR = Path(__file__).resolve().parents[2] / "prompts"
@@ -22,4 +23,16 @@ def get_intent_service(settings: Settings = Depends(get_settings)) -> IntentServ
         client=client,
         model=llm.model,
         system_prompt=_load_prompt("intent_extraction_prompt.md"),
+    )
+
+
+def get_cart_reasoning_service(
+    settings: Settings = Depends(get_settings),
+) -> CartReasoningService:
+    llm = settings.active_llm()
+    client = AsyncOpenAI(api_key=llm.api_key, base_url=llm.base_url)
+    return CartReasoningService(
+        client=client,
+        model=llm.model,
+        system_prompt=_load_prompt("cart_reasoning_prompt.md"),
     )

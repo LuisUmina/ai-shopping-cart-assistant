@@ -200,11 +200,11 @@ class TestChatEndpoint:
         body = resp.json()
         assert body["intent"]["shopping_intent"][0]["product_query"] == "arroz"
 
-    def test_cart_and_candidates_empty_in_phase3(self):
+    def test_cart_and_candidates_empty_without_scrapers(self):
         client = self._client_with_mock_service(VALID_INTENT_JSON)
         resp = client.post("/api/chat", json={"message": "Necesito arroz"})
         body = resp.json()
-        assert body["cart"] == []
+        assert body["cart"] is None
         assert body["candidate_products"] == {}
 
     def test_invalid_intent_returns_422(self):

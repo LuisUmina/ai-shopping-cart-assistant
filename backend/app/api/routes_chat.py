@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.dependencies import get_intent_service
+from app.models.cart_models import CartRecommendation
 from app.models.intent_models import ShoppingIntent
+from app.models.product_models import ProductCandidate
 from app.services.intent_service import IntentExtractionError, IntentService
 
 router = APIRouter(tags=["chat"])
@@ -15,8 +17,8 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     intent: ShoppingIntent | None = None
-    cart: list = []
-    candidate_products: dict = {}
+    cart: CartRecommendation | None = None
+    candidate_products: dict[str, list[ProductCandidate]] = {}
     warnings: list[str] = []
 
 

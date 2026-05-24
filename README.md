@@ -85,5 +85,5 @@ Current coverage: **289 tests passing** (models, parsers, intent extraction, scr
 | 6 | ✅ Done | Pre-filtering engine — relevance scoring, negative keywords |
 | 7 | ✅ Done | Ranking engine + cart builder — required units, price scoring, alternatives |
 | 8 | ✅ Done | LLM final reasoning — compact candidate input, validated cart output |
-| 9 | ⬜ Next | Web interface — ChatPanel, PreferencesPanel, CartSummary, ProductCard |
-| 10 | ⬜ | Demo scenario — end-to-end demo with real products |
+| 9 | ✅ Done | Web interface — ChatPanel, PreferencesPanel, CartSummary, ProductCard |
+| 10 | ⬜ Next | Demo scenario — end-to-end demo with real products |

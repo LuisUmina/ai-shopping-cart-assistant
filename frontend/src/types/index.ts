@@ -1,0 +1,92 @@
+export type Priority = "low" | "medium" | "high";
+export type QuantityUnit = "g" | "kg" | "ml" | "l" | "unit" | "pack" | "roll" | "bag" | "box";
+export type StoreId = "plaza_vea" | "metro" | "vivanda" | "tottus";
+export type Availability = "available" | "unavailable" | "unknown";
+
+export interface ShoppingIntentItem {
+  raw_text: string;
+  product_query: string;
+  quantity: number | null;
+  unit: QuantityUnit | null;
+  brand_preference: string | null;
+  price_sensitivity: Priority;
+  allow_substitution: boolean;
+}
+
+export interface ShoppingIntent {
+  shopping_intent: ShoppingIntentItem[];
+}
+
+export interface ProductCandidate {
+  store: StoreId;
+  title: string;
+  brand?: string | null;
+  price: number;
+  unit_price: number;
+  quantity_value: number;
+  quantity_unit: QuantityUnit;
+  availability: Availability;
+  product_url: string;
+}
+
+export interface CartItem {
+  requested_item: string;
+  selected_product: string;
+  store: StoreId;
+  unit_price: number;
+  product_quantity_value: number;
+  product_quantity_unit: QuantityUnit;
+  required_units: number;
+  effective_quantity: number;
+  excess_quantity: number;
+  estimated_total: number;
+  product_url: string;
+  reason: string;
+  alternatives: ProductCandidate[];
+}
+
+export interface CartRecommendation {
+  cart: CartItem[];
+  total_estimated_cost: number;
+  warnings: string[];
+  questions: string[];
+}
+
+export interface UserPreferences {
+  price_priority: Priority;
+  brand_priority: Priority;
+  known_brands_only: boolean;
+  allow_substitutions: boolean;
+  allow_equivalent_sizes: boolean;
+  preferred_stores: StoreId[];
+  excluded_brands: string[];
+  preferred_brands: string[];
+  max_candidates_per_product: number;
+}
+
+export interface ChatResponse {
+  intent: ShoppingIntent | null;
+  cart: CartRecommendation | null;
+  candidate_products: Record<string, ProductCandidate[]>;
+  warnings: string[];
+}
+
+export const STORE_LABELS: Record<StoreId, string> = {
+  plaza_vea: "Plaza Vea",
+  metro: "Metro",
+  vivanda: "Vivanda",
+  tottus: "Tottus",
+};
+
+export const STORE_COLORS: Record<StoreId, string> = {
+  plaza_vea: "bg-orange-100 text-orange-800",
+  metro: "bg-blue-100 text-blue-800",
+  vivanda: "bg-rose-100 text-rose-800",
+  tottus: "bg-green-100 text-green-800",
+};
+
+export const PRIORITY_LABELS: Record<Priority, string> = {
+  high: "Alta",
+  medium: "Media",
+  low: "Baja",
+};

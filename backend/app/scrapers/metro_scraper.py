@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import quote
 
 from app.models.common import Availability, QuantityUnit, StoreId
 from app.models.product_models import ProductCandidate
@@ -8,14 +9,50 @@ from app.utils.price_parser import parse_price
 from app.utils.unit_parser import parse_quantity
 
 _BASE_URL = "https://www.metro.pe"
-_SEARCH_SELECTORS = (
-    "input[placeholder*='Busca']",
-    "input[placeholder*='busca']",
-    "input[type='search']",
-    "input[class*='searchInput']",
-    "header input",
-)
-_PRODUCT_SELECTOR = "article[data-cnstrc-item-id]"
+# Navigate directly to search results — avoids the race condition where
+# homepage carousels already contain article[data-cnstrc-item-id] and
+# wait_for_selector() resolves before the page actually navigates.
+_SEARCH_URL = _BASE_URL + "/s?q={query}&sort=score_desc"
+
+# Primary: VTEX product summary elements (Metro's current structure).
+# Fallback: Constructor.io data attributes (older Metro structure).
+_PRODUCT_SELECTOR = "[class*='vtex-product-summary-2-x-element'], article[data-cnstrc-item-id]"
+
+_EXTRACT_JS = """() => {
+    // Try constructor.io attributes first (previous Metro structure)
+    const cnstrc = document.querySelectorAll('article[data-cnstrc-item-id]');
+    if (cnstrc.length > 0) {
+        return Array.from(cnstrc).map(article => {
+            const linkEl = article.closest('a') || article.parentElement?.closest('a');
+            const imgEl  = article.querySelector('img');
+            return {
+                product_id: article.getAttribute('data-cnstrc-item-id') || '',
+                title:      article.getAttribute('data-cnstrc-item-name') || '',
+                price:      article.getAttribute('data-cnstrc-item-price') || '',
+                link:       linkEl ? (linkEl.getAttribute('href') || '') : '',
+                image:      imgEl  ? (imgEl.getAttribute('src')  || '') : '',
+            };
+        });
+    }
+    // VTEX product summary fallback (current Metro structure)
+    const els = document.querySelectorAll("[class*='vtex-product-summary-2-x-element']");
+    return Array.from(els).map(el => {
+        const linkEl  = el.querySelector('a[href]');
+        const imgEl   = el.querySelector('img');
+        const nameEl  = el.querySelector("[class*='productBrand']")
+                     || el.querySelector("[class*='productName']");
+        const priceEl = el.querySelector("[class*='sellingPriceValue']")
+                     || el.querySelector("[class*='currencyContainer']");
+        const skuEl   = el.querySelector('[data-sku]') || el.querySelector('[data-product-id]');
+        return {
+            product_id: skuEl ? (skuEl.getAttribute('data-sku') || skuEl.getAttribute('data-product-id') || '') : '',
+            title:      nameEl  ? nameEl.textContent.trim()                         : '',
+            price:      priceEl ? priceEl.textContent.replace(/[^0-9.,]/g, '').trim() : '',
+            link:       linkEl  ? linkEl.href                                        : '',
+            image:      imgEl   ? (imgEl.getAttribute('src') || imgEl.getAttribute('data-src') || '') : '',
+        };
+    });
+}"""
 
 
 class MetroScraper(BaseScraper):
@@ -40,32 +77,19 @@ class MetroScraper(BaseScraper):
             return []
 
     async def _do_search(self, query: str) -> list[ProductCandidate]:
+        search_url = _SEARCH_URL.format(query=quote(query))
         page = await self._new_page()
         try:
-            await page.goto(_BASE_URL, wait_until="domcontentloaded", timeout=self.timeout_ms)
-            await page.wait_for_timeout(2_000)
+            await page.goto(search_url, wait_until="domcontentloaded", timeout=self.timeout_ms)
+            await page.wait_for_timeout(3_000)
             await self._dismiss_popups(page)
-            await self._submit_search(page, query, _SEARCH_SELECTORS)
             await page.wait_for_selector(_PRODUCT_SELECTOR, timeout=15_000)
             await page.wait_for_timeout(2_000)
 
             self.logger.info("Metro results URL: %s", page.url)
             self.save_html(await page.content(), query)
 
-            raw_items: list[dict] = await page.evaluate(
-                """(sel) => Array.from(document.querySelectorAll(sel)).map(article => {
-                    const linkEl = article.closest('a') || article.parentElement?.closest('a');
-                    const imgEl  = article.querySelector('img');
-                    return {
-                        product_id: article.getAttribute('data-cnstrc-item-id') || '',
-                        title:      article.getAttribute('data-cnstrc-item-name') || '',
-                        price:      article.getAttribute('data-cnstrc-item-price') || '',
-                        link:       linkEl ? (linkEl.getAttribute('href') || '') : '',
-                        image:      imgEl  ? (imgEl.getAttribute('src') || '') : '',
-                    };
-                })""",
-                _PRODUCT_SELECTOR,
-            )
+            raw_items: list[dict] = await page.evaluate(_EXTRACT_JS)
             self.save_raw_json(raw_items, query)
             return [self._to_candidate(item, query) for item in raw_items if item.get("title")]
         finally:

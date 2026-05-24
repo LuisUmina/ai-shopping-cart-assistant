@@ -8,7 +8,7 @@ from pathlib import Path
 
 from app.models.preference_models import UserPreferences
 
-_PREFS_FILE = Path(__file__).resolve().parents[2] / "data" / "user_preferences.json"
+_PREFS_FILE = Path(__file__).resolve().parents[3] / "data" / "user_preferences.json"
 
 
 def load_preferences() -> UserPreferences:

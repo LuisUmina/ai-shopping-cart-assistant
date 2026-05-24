@@ -88,9 +88,11 @@ async def chat(
             + ["No se pudo generar la explicación del carrito."]
         })
 
+    # Warnings live inside cart.warnings — don't duplicate them at the top level.
+    # ChatResponse.warnings is reserved for pipeline-level issues (e.g. a store
+    # that was completely unreachable), not product-level cart warnings.
     return ChatResponse(
         intent=intent,
         cart=recommendation,
         candidate_products=ranked_per_query,
-        warnings=recommendation.warnings,
     )

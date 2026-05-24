@@ -1,16 +1,14 @@
 {
-  "price_priority": "high",
+  "price_priority": "medium",
   "brand_priority": "medium",
-  "known_brands_only": false,
-  "allow_substitutions": true,
+  "known_brands_only": true,
+  "allow_substitutions": false,
   "allow_equivalent_sizes": true,
   "preferred_stores": [
-    "plaza_vea",
     "metro",
-    "vivanda",
-    "tottus"
+    "vivanda"
   ],
   "excluded_brands": [],
   "preferred_brands": [],
-  "max_candidates_per_product": 5
+  "max_candidates_per_product": 10
 }

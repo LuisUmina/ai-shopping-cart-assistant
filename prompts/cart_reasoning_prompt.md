@@ -24,6 +24,6 @@ Guías para las razones:
 - Máximo 2 oraciones por razón
 
 Guías para warnings y questions:
-- `warnings`: solo si detectas algo importante que el sistema no haya advertido (ej. combinación inusual de productos)
+- `warnings`: el campo `warnings` del JSON de entrada ya contiene las advertencias detectadas por el sistema. NO las repitas ni las reformules. Solo añade advertencias completamente nuevas que el sistema no haya detectado (ej. combinación inusual de productos, posible error de pedido).
 - `questions`: si hay información que mejoraría el carrito (ej. preferencia de marca, tamaño de presentación)
 - Si no hay nada que agregar, usa listas vacías `[]`

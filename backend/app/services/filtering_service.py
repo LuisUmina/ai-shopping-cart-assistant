@@ -4,20 +4,23 @@ Pre-filtering engine (FR-008).
 Scores product candidates for relevance against a shopping intent item and
 user preferences, then returns only the top-N candidates above the threshold.
 
-Relevance formula (weights sum to 1.0):
+Relevance formula:
     score = title_score    * 0.55
           + category_score * 0.10
           + brand_score    * 0.15
           + unit_score     * 0.10
-          + avail_score    * 0.10
           - negative_keyword_penalty (0.50 if triggered)
     clamped to [0.0, 1.0]
 
 Products scoring below MIN_RELEVANCE_SCORE (0.55) are rejected.
+Products explicitly marked UNAVAILABLE are hard-rejected before scoring.
 
 Category weight is intentionally low (0.10) because only Plaza Vea exposes
 structured category metadata. Giving it more weight would systematically
 disadvantage stores whose scrapers extract less metadata.
+
+Availability is not used as a scoring factor — only 1 of 4 stores exposes
+reliable stock data, so scoring on it would create a systematic store bias.
 """
 
 from app.models.common import Availability, QuantityUnit
@@ -54,8 +57,9 @@ class FilteringService:
 
         scored: list[tuple[ProductCandidate, float]] = []
         for candidate in candidates:
-            # Hard-reject excluded brands before scoring
             if candidate.brand and normalize_for_comparison(candidate.brand) in excluded:
+                continue
+            if candidate.availability == Availability.UNAVAILABLE:
                 continue
             s = self.score(candidate, intent_item, preferences)
             if s >= MIN_RELEVANCE_SCORE:
@@ -76,7 +80,6 @@ class FilteringService:
             + self._category_score(candidate.category, intent_item.product_query) * 0.10
             + self._brand_score(candidate, intent_item, preferences) * 0.15
             + self._unit_score(candidate.quantity_unit, intent_item.unit) * 0.10
-            + self._availability_score(candidate.availability) * 0.10
         )
         if _has_negative_keyword(candidate.title):
             raw -= 0.50
@@ -138,14 +141,6 @@ class FilteringService:
         if requested_unit is None:
             return 0.5
         return 1.0 if are_compatible(product_unit, requested_unit) else 0.0
-
-    def _availability_score(self, availability: Availability) -> float:
-        if availability == Availability.AVAILABLE:
-            return 1.0
-        if availability == Availability.UNKNOWN:
-            return 0.5
-        return 0.0
-
 
 # ── Module-level helper ───────────────────────────────────────────────────────
 

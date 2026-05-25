@@ -185,9 +185,9 @@ class TestMetroNormalization:
         c = _metro(tmp_path)._to_candidate(METRO_ITEM, "arroz")
         assert c.product_url.startswith("https://www.metro.pe")
 
-    def test_availability_default_available(self, tmp_path: Path):
+    def test_availability_default_unknown(self, tmp_path: Path):
         c = _metro(tmp_path)._to_candidate(METRO_ITEM, "arroz")
-        assert c.availability == Availability.AVAILABLE
+        assert c.availability == Availability.UNKNOWN
 
     def test_absolute_link_unchanged(self, tmp_path: Path):
         item = {**METRO_ITEM, "link": "https://www.metro.pe/product/123"}

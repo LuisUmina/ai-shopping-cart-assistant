@@ -11,7 +11,15 @@
       "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\USER\\\\Desktop\\\\Luis Angel\\\\4- WorkSpace\\\\PWC\\\\Jose Astuvilca - AI Agent \\(Supermarkets\\) v2 - Python\" -Recurse -Force | Select-Object -Property FullName | ForEach-Object { $_.FullName.Substring\\(\"C:\\\\Users\\\\USER\\\\Desktop\\\\Luis Angel\\\\4- WorkSpace\\\\PWC\\\\Jose Astuvilca - AI Agent \\(Supermarkets\\) v2 - Python\".Length\\).TrimStart\\('\\\\'\\) } | Sort-Object)",
       "Bash(.venv\\\\Scripts\\\\python.exe -m pytest --tb=short -q)",
       "Bash(./.venv/Scripts/python.exe -m pytest --tb=short -q)",
-      "Bash(./.venv/Scripts/python.exe -m pytest tests/test_scraping_service.py tests/test_intent_extraction.py --tb=short -q)"
+      "Bash(./.venv/Scripts/python.exe -m pytest tests/test_scraping_service.py tests/test_intent_extraction.py --tb=short -q)",
+      "Bash(.venv\\\\Scripts\\\\python.exe -m pytest tests/ --tb=no -q)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(python -m pytest tests/ -q)",
+      "Bash(python -m pip show pytest)",
+      "Bash(py -m pytest tests/ -q)",
+      "Bash(.venv\\\\Scripts\\\\python.exe -m pytest tests/ -q)"
     ]
   }
 }

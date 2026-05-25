@@ -197,19 +197,6 @@ class TestUnitScore:
         assert score == pytest.approx(0.0)
 
 
-# ── Availability scoring ──────────────────────────────────────────────────────
-
-class TestAvailabilityScore:
-    def test_available(self):
-        assert svc._availability_score(Availability.AVAILABLE) == pytest.approx(1.0)
-
-    def test_unavailable(self):
-        assert svc._availability_score(Availability.UNAVAILABLE) == pytest.approx(0.0)
-
-    def test_unknown(self):
-        assert svc._availability_score(Availability.UNKNOWN) == pytest.approx(0.5)
-
-
 # ── Negative keyword penalty ──────────────────────────────────────────────────
 
 class TestNegativeKeyword:
@@ -326,12 +313,11 @@ class TestFilter:
         result = svc.filter([c], _intent("arroz"), _prefs(excluded_brands=["Costeño"]))
         assert len(result) == 1
 
-    def test_unavailable_product_can_still_pass_if_score_high_enough(self):
+    def test_unavailable_product_is_hard_rejected(self):
         c = _make_candidate(
             title="Arroz Extra Faraón Bolsa 5 Kg",
             category="Abarrotes / Arroz",
             availability=Availability.UNAVAILABLE,
         )
         result = svc.filter([c], _intent("arroz"), _prefs())
-        # Unavailable hurts availability_score (0.10 weight) but title+category still carry it
-        assert len(result) == 1
+        assert len(result) == 0

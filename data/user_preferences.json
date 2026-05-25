@@ -6,9 +6,9 @@
   "allow_equivalent_sizes": true,
   "preferred_stores": [
     "metro",
-    "tottus",
+    "plaza_vea",
     "vivanda",
-    "plaza_vea"
+    "tottus"
   ],
   "excluded_brands": [],
   "preferred_brands": [],

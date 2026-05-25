@@ -10,17 +10,19 @@ Base formula (weights sum to 1.0 after normalization):
       + price_score          * w_price       (lower unit price → higher score)
       + unit_match_score     * w_unit        (overbuying penalty)
       + brand_score          * w_brand       (brand alignment)
-      + availability_score   * w_avail
       + store_preference     * w_store
 
 price_priority / brand_priority (from UserPreferences or intent) shift the weights.
 
-Anti-bias note: relevance_score is driven 90% by title match and only 10%
-by a category bonus. This prevents stores with richer metadata (Plaza Vea
-exposes data-ga-category; others don't) from gaining an unfair advantage.
+Anti-bias notes:
+  - relevance_score is driven 90% by title match and only 10% by a category
+    bonus (Plaza Vea exposes data-ga-category; others don't).
+  - Availability is not scored — only 1 of 4 stores exposes reliable stock
+    data, making it a store-bias source rather than a useful signal.
+    UNAVAILABLE products are hard-filtered before ranking reaches this stage.
 """
 
-from app.models.common import Availability, Priority, QuantityUnit
+from app.models.common import Priority, QuantityUnit
 from app.models.intent_models import ShoppingIntentItem
 from app.models.preference_models import UserPreferences
 from app.models.product_models import ProductCandidate
@@ -66,7 +68,6 @@ class RankingService:
             + _price_score(candidate, peer_candidates) * w["price"]
             + _unit_match_score(candidate, intent_item) * w["unit"]
             + _brand_score(candidate, intent_item, preferences) * w["brand"]
-            + _availability_score(candidate) * w["avail"]
             + _store_score(candidate, preferences) * w["store"]
         )
         return max(0.0, min(1.0, raw))
@@ -90,8 +91,7 @@ def _compute_weights(
         price=0.25 * _PRIORITY_FACTOR[effective_price_priority],
         unit=0.15,
         brand=0.15 * _PRIORITY_FACTOR[preferences.brand_priority],
-        avail=0.05,
-        store=0.05,
+        store=0.10,
     )
     total = sum(w.values())
     return {k: v / total for k, v in w.items()}
@@ -185,14 +185,6 @@ def _brand_score(
     if preferences.known_brands_only and not candidate_brand:
         return 0.0
     return 0.5
-
-
-def _availability_score(candidate: ProductCandidate) -> float:
-    if candidate.availability == Availability.AVAILABLE:
-        return 1.0
-    if candidate.availability == Availability.UNKNOWN:
-        return 0.5
-    return 0.0
 
 
 def _store_score(candidate: ProductCandidate, preferences: UserPreferences) -> float:

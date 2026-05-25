@@ -118,7 +118,7 @@ class MetroScraper(BaseScraper):
             quantity_unit=qty_unit,
             unit_price=unit_price,
             unit_price_unit=qty_unit,
-            availability=Availability.AVAILABLE,
+            availability=Availability.UNKNOWN,
             image_url=item.get("image") or None,
             product_url=link,
             search_query=query,

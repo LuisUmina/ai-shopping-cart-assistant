@@ -9,7 +9,6 @@ from app.models.preference_models import UserPreferences
 from app.models.product_models import ProductCandidate
 from app.services.ranking_service import (
     RankingService,
-    _availability_score,
     _brand_score,
     _price_score,
     _relevance_score,
@@ -198,19 +197,6 @@ class TestBrandScore:
         assert s == pytest.approx(0.0)
 
 
-# ── Availability score ────────────────────────────────────────────────────────
-
-class TestAvailabilityScore:
-    def test_available(self):
-        assert _availability_score(_candidate(availability=Availability.AVAILABLE)) == 1.0
-
-    def test_unavailable(self):
-        assert _availability_score(_candidate(availability=Availability.UNAVAILABLE)) == 0.0
-
-    def test_unknown(self):
-        assert _availability_score(_candidate(availability=Availability.UNKNOWN)) == 0.5
-
-
 # ── Store score ───────────────────────────────────────────────────────────────
 
 class TestStoreScore:
@@ -252,12 +238,6 @@ class TestRank:
             _prefs(),
         )
         assert ranked[0].brand == "COSTEÑO"
-
-    def test_available_ranked_above_unavailable(self):
-        avail = _candidate(title="Arroz 5 Kg", availability=Availability.AVAILABLE)
-        unavail = _candidate(title="Arroz 5 Kg", availability=Availability.UNAVAILABLE)
-        ranked = svc.rank([unavail, avail], _intent(), _prefs())
-        assert ranked[0].availability == Availability.AVAILABLE
 
     def test_score_in_zero_one_range(self):
         candidates = [

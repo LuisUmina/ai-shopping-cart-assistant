@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { CartRecommendation, ChatResponse, ShoppingIntentItem } from "../types";
 import { postChat } from "../api/client";
+import { CandidateProductsTable } from "./CandidateProductsTable";
 
 type Message =
   | { role: "user"; text: string; id: number }
@@ -54,9 +55,12 @@ function AssistantMessage({ response }: { response: ChatResponse }) {
       )}
 
       {hasCart && (
-        <p className="text-xs text-green-700 mt-2">
-          ✓ Carrito listo — revisa el panel derecho.
-        </p>
+        <>
+          <p className="text-xs text-green-700 mt-2">
+            ✓ Carrito listo — revisa el panel derecho.
+          </p>
+          <CandidateProductsTable candidates={response.candidate_products} />
+        </>
       )}
 
       {response.warnings.map((w, i) => (

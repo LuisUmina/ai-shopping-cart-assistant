@@ -1,7 +1,7 @@
 {
   "price_priority": "medium",
   "brand_priority": "medium",
-  "known_brands_only": true,
+  "known_brands_only": false,
   "allow_substitutions": true,
   "allow_equivalent_sizes": true,
   "preferred_stores": [
@@ -12,5 +12,5 @@
   ],
   "excluded_brands": [],
   "preferred_brands": [],
-  "max_candidates_per_product": 10
+  "max_candidates_per_product": 5
 }

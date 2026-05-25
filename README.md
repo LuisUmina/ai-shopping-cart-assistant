@@ -70,7 +70,7 @@ cd backend
 .venv\Scripts\python.exe -m pytest tests/ -v
 ```
 
-Current coverage: **289 tests passing** (models, parsers, intent extraction, scraper base, store scrapers, filtering, ranking, cart builder, cart reasoning).
+Current coverage: **299 tests passing** (models, parsers, intent extraction, scraper base, store scrapers, filtering, ranking, cart builder, cart reasoning).
 
 ## Tiendas soportadas y metadatos
 

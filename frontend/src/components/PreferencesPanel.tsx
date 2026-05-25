@@ -79,7 +79,7 @@ export function PreferencesPanel({ preferences, onChange }: Props) {
   }
 
   return (
-    <aside className="w-64 flex flex-col bg-white border-r border-[#E8EBED] shrink-0">
+    <aside className="w-full lg:w-64 flex flex-col bg-white border-r border-[#E8EBED] shrink-0">
 
       {/* Header */}
       <div className="px-5 pt-5 pb-4 border-b border-[#F0F2F3]">

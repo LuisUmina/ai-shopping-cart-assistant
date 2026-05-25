@@ -13,7 +13,7 @@ export function CartSummary({ cart }: Props) {
   const itemCount = cart?.cart.length ?? 0;
 
   return (
-    <aside className="w-80 flex flex-col bg-white border-l border-[#E8EBED] shrink-0 relative">
+    <aside className="w-full lg:w-80 flex flex-col bg-white border-l border-[#E8EBED] shrink-0 relative">
 
       {/* ── Checkout slide-over ──────────────────────────────────────────── */}
       {showCheckout && cart && (

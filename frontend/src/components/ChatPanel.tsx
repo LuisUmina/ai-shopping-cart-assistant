@@ -118,6 +118,10 @@ export function ChatPanel({ onCartUpdate }: Props) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  useEffect(() => {
+    return () => stopLoadingCycle();
+  }, [stopLoadingCycle]);
+
   async function send() {
     const text = input.trim();
     if (!text || loading) return;

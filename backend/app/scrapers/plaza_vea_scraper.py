@@ -88,10 +88,11 @@ class PlazaVeaScraper(BaseScraper):
         qty_unit = parsed_qty.unit if (parsed_qty and parsed_qty.unit) else QuantityUnit.UNIT
         unit_price = round(price_val / qty_value, 4) if qty_value else price_val
 
+        stock = item.get("stock", "").lower()
         availability = (
-            Availability.AVAILABLE
-            if item.get("stock", "").lower() == "true"
-            else Availability.UNAVAILABLE
+            Availability.AVAILABLE if stock == "true"
+            else Availability.UNAVAILABLE if stock == "false"
+            else Availability.UNKNOWN
         )
         link = item.get("link", "")
         if link and not link.startswith("http"):

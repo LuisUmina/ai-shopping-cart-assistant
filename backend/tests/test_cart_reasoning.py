@@ -15,6 +15,7 @@ from app.services.cart_reasoning_service import (
     CartReasonOutput,
     _build_cart_summary,
     _parse_reason_output,
+    _rebuild_cart_item,
 )
 
 
@@ -144,6 +145,20 @@ class TestParseReasonOutput:
         result = _parse_reason_output(data)
         assert result.reasons == {}
 
+    def test_swaps_field_parsed(self):
+        data = json.dumps({
+            "reasons": {"leche": "Se cambió a leche entera."},
+            "swaps": {"leche": 0},
+            "warnings": [],
+            "questions": [],
+        })
+        result = _parse_reason_output(data)
+        assert result.swaps == {"leche": 0}
+
+    def test_swaps_defaults_to_empty(self):
+        result = _parse_reason_output(VALID_REASON_JSON)
+        assert result.swaps == {}
+
 
 # ── _build_cart_summary ───────────────────────────────────────────────────────
 
@@ -194,6 +209,21 @@ class TestBuildCartSummary:
         summary = _build_cart_summary(rec, intent, "arroz")
         parsed = json.loads(summary)
         assert "Advertencia previa" in parsed["warnings"]
+
+    def test_alternatives_include_index(self):
+        item = _cart_item()
+        item = item.model_copy(update={
+            "alternatives": [_candidate(f"Arroz {i}") for i in range(2)]
+        })
+        rec = CartRecommendation(cart=[item], total_estimated_cost=18.90)
+        intent = _intent(_intent_item())
+        summary = _build_cart_summary(rec, intent, "arroz")
+        parsed = json.loads(summary)
+        alts = parsed["cart"][0]["alternatives"]
+        assert alts[0]["index"] == 0
+        assert alts[1]["index"] == 1
+        assert "title" in alts[0]
+        assert "store" in alts[0]
 
 
 # ── CartReasoningService.enrich ───────────────────────────────────────────────
@@ -293,3 +323,82 @@ class TestCartReasoningServiceEnrich:
         result = await svc.enrich(rec, intent, "arroz y leche")
         assert result.cart[0].reason == "Mejor precio."
         assert result.cart[1].reason == "Marca confiable."
+
+    async def test_enrich_applies_valid_swap(self):
+        alt = _candidate("Arroz Costeño 5 Kg")
+        item = _cart_item()
+        item = item.model_copy(update={"alternatives": [alt]})
+        rec = CartRecommendation(cart=[item], total_estimated_cost=18.90)
+        response = json.dumps({
+            "reasons": {"arroz": "Se cambió a una mejor opción."},
+            "swaps": {"arroz": 0},
+            "warnings": [],
+            "questions": [],
+        })
+        svc = _make_service(response)
+        result = await svc.enrich(rec, _intent(_intent_item()), "arroz")
+        assert result.cart[0].selected_product == "Arroz Costeño 5 Kg"
+        assert result.cart[0].reason == "Se cambió a una mejor opción."
+
+    async def test_enrich_ignores_out_of_range_swap(self):
+        item = _cart_item()  # no alternatives
+        rec = CartRecommendation(cart=[item], total_estimated_cost=18.90)
+        response = json.dumps({
+            "reasons": {"arroz": "Selección válida."},
+            "swaps": {"arroz": 5},  # índice fuera de rango
+            "warnings": [],
+            "questions": [],
+        })
+        svc = _make_service(response)
+        result = await svc.enrich(rec, _intent(_intent_item()), "arroz")
+        assert result.cart[0].selected_product == "Arroz Extra Costeño 5 Kg"  # sin cambio
+
+    async def test_enrich_swap_updates_total(self):
+        alt = _candidate("Arroz Económico 5 Kg")
+        alt = alt.model_copy(update={"price": 15.00, "unit_price": 3.00})
+        item = _cart_item()  # estimated_total = 18.90
+        item = item.model_copy(update={"alternatives": [alt]})
+        rec = CartRecommendation(cart=[item], total_estimated_cost=18.90)
+        response = json.dumps({
+            "reasons": {"arroz": "Opción más económica."},
+            "swaps": {"arroz": 0},
+            "warnings": [],
+            "questions": [],
+        })
+        svc = _make_service(response)
+        result = await svc.enrich(rec, _intent(_intent_item()), "arroz")
+        assert result.total_estimated_cost == 15.00
+
+
+# ── _rebuild_cart_item ────────────────────────────────────────────────────────
+
+class TestRebuildCartItem:
+    def test_updates_product_fields(self):
+        original = _cart_item()
+        new_candidate = _candidate("Arroz Faraón 5 Kg")
+        new_candidate = new_candidate.model_copy(update={
+            "price": 20.0, "unit_price": 4.0, "store": StoreId.METRO,
+        })
+        rebuilt = _rebuild_cart_item(original, new_candidate, [], _intent_item())
+        assert rebuilt.selected_product == "Arroz Faraón 5 Kg"
+        assert rebuilt.store == StoreId.METRO
+        assert rebuilt.estimated_total == 20.0
+
+    def test_remaining_alts_set_correctly(self):
+        original = _cart_item()
+        alt1 = _candidate("Arroz A")
+        alt2 = _candidate("Arroz B")
+        rebuilt = _rebuild_cart_item(original, _candidate(), [alt1, alt2], None)
+        assert len(rebuilt.alternatives) == 2
+
+    def test_without_intent_defaults_one_unit(self):
+        original = _cart_item()
+        new_candidate = _candidate("Arroz 1 Kg")
+        rebuilt = _rebuild_cart_item(original, new_candidate, [], None)
+        assert rebuilt.required_units == 1
+
+    def test_original_not_mutated(self):
+        original = _cart_item()
+        original_title = original.selected_product
+        _rebuild_cart_item(original, _candidate("Otro Arroz"), [], None)
+        assert original.selected_product == original_title

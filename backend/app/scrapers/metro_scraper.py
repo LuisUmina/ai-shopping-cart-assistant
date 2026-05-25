@@ -5,6 +5,7 @@ from urllib.parse import quote
 from app.models.common import Availability, QuantityUnit, StoreId
 from app.models.product_models import ProductCandidate
 from app.scrapers.base_scraper import BaseScraper
+from app.utils.brand_parser import extract_brand
 from app.utils.price_parser import parse_price
 from app.utils.unit_parser import parse_quantity
 
@@ -100,6 +101,8 @@ class MetroScraper(BaseScraper):
         price_val = parsed_price.value if (parsed_price and parsed_price.value is not None) else 0.0
 
         title = item.get("title", "")
+        parsed_brand = extract_brand(title)
+        brand = parsed_brand.brand if parsed_brand.confidence >= 0.9 else None
         parsed_qty = parse_quantity(title)
         qty_value = parsed_qty.value if (parsed_qty and parsed_qty.value) else 1.0
         qty_unit = parsed_qty.unit if (parsed_qty and parsed_qty.unit) else QuantityUnit.UNIT
@@ -113,6 +116,7 @@ class MetroScraper(BaseScraper):
             store=StoreId.METRO,
             product_id=item.get("product_id") or None,
             title=title,
+            brand=brand,
             raw_price=item.get("price") or None,
             price=price_val,
             presentation_text=title,

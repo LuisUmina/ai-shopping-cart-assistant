@@ -79,10 +79,10 @@ export const STORE_LABELS: Record<StoreId, string> = {
 };
 
 export const STORE_COLORS: Record<StoreId, string> = {
-  plaza_vea: "bg-orange-100 text-orange-800",
-  metro: "bg-blue-100 text-blue-800",
-  vivanda: "bg-rose-100 text-rose-800",
-  tottus: "bg-green-100 text-green-800",
+  plaza_vea: "bg-orange-50 text-orange-600",
+  metro:     "bg-sky-50 text-sky-700",
+  vivanda:   "bg-pink-50 text-pink-600",
+  tottus:    "bg-emerald-50 text-emerald-700",
 };
 
 export const PRIORITY_LABELS: Record<Priority, string> = {

@@ -110,7 +110,7 @@ class TottusScraper(BaseScraper):
             quantity_unit=qty_unit,
             unit_price=unit_price,
             unit_price_unit=qty_unit,
-            availability=Availability.AVAILABLE,
+            availability=Availability.UNKNOWN,
             image_url=image_url,
             product_url=item.get("url", ""),
             search_query=query,

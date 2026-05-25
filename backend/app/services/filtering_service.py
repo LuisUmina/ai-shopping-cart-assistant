@@ -4,8 +4,8 @@ Pre-filtering engine (FR-008).
 Scores product candidates for relevance against a shopping intent item and
 user preferences, then returns only the top-N candidates above the threshold.
 
-Relevance formula:
-    score = title_score    * 0.55
+Relevance formula (weights sum to 1.0):
+    score = title_score    * 0.65
           + category_score * 0.10
           + brand_score    * 0.15
           + unit_score     * 0.10
@@ -76,7 +76,7 @@ class FilteringService:
     ) -> float:
         """Compute relevance score in [0.0, 1.0] for a single candidate."""
         raw = (
-            self._title_score(candidate.title, intent_item.product_query) * 0.55
+            self._title_score(candidate.title, intent_item.product_query) * 0.65
             + self._category_score(candidate.category, intent_item.product_query) * 0.10
             + self._brand_score(candidate, intent_item, preferences) * 0.15
             + self._unit_score(candidate.quantity_unit, intent_item.unit) * 0.10

@@ -12,5 +12,5 @@
   ],
   "excluded_brands": [],
   "preferred_brands": [],
-  "max_candidates_per_product": 5
+  "max_candidates_per_product": 10
 }

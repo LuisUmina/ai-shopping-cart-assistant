@@ -1,1 +1,83 @@
 @import "tailwindcss";
+
+@theme {
+  /* Mint / Teal brand palette */
+  --color-mint-50:  #f0fdfb;
+  --color-mint-100: #ccfbf3;
+  --color-mint-200: #99f6e7;
+  --color-mint-300: #5eecd6;
+  --color-mint-400: #2dd4bf;
+  --color-mint-500: #14d5b5;
+  --color-mint-600: #0fb89d;
+  --color-mint-700: #0d9480;
+  --color-mint-800: #0f766e;
+  --color-mint-900: #115e59;
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ── Thin, elegant scrollbar ─────────────────────────────────────────────── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #e2e8f0 transparent;
+}
+*::-webkit-scrollbar        { width: 3px; }
+*::-webkit-scrollbar-track  { background: transparent; }
+*::-webkit-scrollbar-thumb  { background: #cbd5e1; border-radius: 999px; }
+
+/* ── Range input — override native with premium mint track + thumb ────────── */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  width: 100%;
+}
+input[type='range']::-webkit-slider-runnable-track {
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 99px;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #14d5b5;
+  margin-top: -7px;
+  box-shadow: 0 1px 6px rgba(20, 213, 181, 0.35);
+  transition: box-shadow 0.15s ease;
+}
+input[type='range']::-webkit-slider-thumb:hover {
+  box-shadow: 0 1px 12px rgba(20, 213, 181, 0.5);
+}
+input[type='range']::-moz-range-track {
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 99px;
+}
+input[type='range']::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #14d5b5;
+  border: none;
+  box-shadow: 0 1px 6px rgba(20, 213, 181, 0.35);
+}
+
+/* ── Select arrow replacement ─────────────────────────────────────────────── */
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%23A9B3B8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px !important;
+}
+
+/* ── Global smooth interaction feedback ──────────────────────────────────── */
+button, a, input, select {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}

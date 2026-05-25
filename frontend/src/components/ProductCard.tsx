@@ -95,7 +95,7 @@ export function ProductCard({ item }: Props) {
           </button>
 
           {showAlternatives && (
-            <ul className="mt-2 space-y-1">
+            <ul className="mt-2 space-y-1 max-h-56 overflow-y-auto overscroll-contain pr-1">
               {item.alternatives.map((alt, i) => (
                 <li
                   key={i}

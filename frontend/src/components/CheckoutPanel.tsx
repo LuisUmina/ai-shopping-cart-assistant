@@ -166,7 +166,7 @@ export function CheckoutPanel({ cart, onClose }: Props) {
                 Cartly Plus
               </p>
               <p className="text-[12px] text-slate-500 leading-relaxed">
-                Conecta tus cuentas y deja que Cartly compre por ti automáticamente — sin pasos extras, sin esperas.
+                La compra automática todavía no está activa. Por ahora puedes abrir los productos desde el carrito y completar la compra manualmente.
               </p>
               <button
                 disabled
@@ -187,15 +187,13 @@ export function CheckoutPanel({ cart, onClose }: Props) {
       <div className="px-5 py-4 border-t border-[#EDF0F2] bg-white shrink-0 space-y-2">
         <button
           disabled
-          className="w-full flex items-center justify-center gap-2.5 bg-mint-500 text-white text-[14px] font-semibold rounded-full py-3.5 opacity-50 cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-2.5 bg-slate-100 text-slate-400 text-[14px] font-semibold rounded-full py-3.5 cursor-not-allowed"
         >
           <LockIcon />
-          Realizar Compra Automática
+          Compra automática próximamente
         </button>
         <p className="text-center text-[11px] text-slate-400">
-          Disponible con{" "}
-          <span className="font-semibold text-mint-600">Cartly Plus</span>
-          {" "}— próximamente
+          Usa los enlaces de cada producto para comprar manualmente en la tienda.
         </p>
       </div>
 

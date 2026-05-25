@@ -67,7 +67,7 @@ function CandidateGroup({
 
       {/* Accordion body */}
       {open && (
-        <ul className="divide-y divide-slate-50">
+        <ul className="divide-y divide-slate-50 max-h-72 overflow-y-auto overscroll-contain">
           {products.map((p, i) => (
             <li
               key={i}

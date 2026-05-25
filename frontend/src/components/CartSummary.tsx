@@ -13,7 +13,7 @@ export function CartSummary({ cart }: Props) {
   const itemCount = cart?.cart.length ?? 0;
 
   return (
-    <aside className="w-full lg:w-80 flex flex-col bg-white border-l border-[#E8EBED] shrink-0 relative">
+    <aside className="w-full lg:w-80 h-full max-h-full flex flex-col min-h-0 overflow-hidden bg-white border-l border-[#E8EBED] shrink-0 relative">
 
       {/* ── Checkout slide-over ──────────────────────────────────────────── */}
       {showCheckout && cart && (
@@ -44,7 +44,7 @@ export function CartSummary({ cart }: Props) {
       </div>
 
       {/* ── Body ────────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 basis-0 min-h-0 overflow-y-auto overscroll-contain p-4 space-y-3">
 
         {isEmpty ? (
           /* ── Empty state ────────────────────────────────────────────── */
@@ -68,10 +68,26 @@ export function CartSummary({ cart }: Props) {
       </div>
 
       {/* ── Footer — total + warnings + CTA ─────────────────────────────── */}
-      {!isEmpty && (
-        <div className="border-t border-[#F0F2F3] bg-white px-5 py-4 space-y-3">
+      <div className="shrink-0 border-t border-[#F0F2F3] bg-white px-5 py-4 space-y-3">
 
-          {/* Total */}
+        {isEmpty ? (
+          <>
+            <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3">
+              <p className="text-[12px] font-semibold text-slate-500">Compra pendiente</p>
+              <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">
+                Genera un carrito desde el chat para habilitar el flujo de compra.
+              </p>
+            </div>
+            <button
+              disabled
+              className="w-full flex items-center justify-center gap-2 bg-slate-100 text-slate-300 text-[13px] font-semibold rounded-full py-3 cursor-not-allowed"
+            >
+              Finalizar compra
+            </button>
+          </>
+        ) : (
+          <>
+            {/* Total */}
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-slate-500">Total estimado</span>
             <span className="text-lg font-bold text-[#1B1D1F] tracking-tight">
@@ -111,9 +127,10 @@ export function CartSummary({ cart }: Props) {
             </svg>
             Finalizar Compra
           </button>
+          </>
+        )}
 
-        </div>
-      )}
+      </div>
 
     </aside>
   );

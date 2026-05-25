@@ -137,20 +137,20 @@ export default function App() {
       </header>
 
       {/* ── Main layout ──────────────────────────────────────────────────── */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 min-h-0 flex overflow-hidden">
 
         {/* Preferences panel */}
-        <div className={`${activeTab === "prefs" ? "flex flex-1" : "hidden"} lg:flex lg:flex-none flex-col overflow-hidden`}>
+        <div className={`${activeTab === "prefs" ? "flex flex-1" : "hidden"} lg:flex lg:flex-none flex-col min-h-0 overflow-hidden`}>
           <PreferencesPanel preferences={preferences} onChange={setPreferences} />
         </div>
 
         {/* Chat panel */}
-        <div className={`${activeTab === "chat" ? "flex flex-1" : "hidden"} lg:flex lg:flex-1 flex-col min-w-0 overflow-hidden`}>
+        <div className={`${activeTab === "chat" ? "flex flex-1" : "hidden"} lg:flex lg:flex-1 flex-col min-w-0 min-h-0 overflow-hidden`}>
           <ChatPanel onCartUpdate={setCart} />
         </div>
 
         {/* Cart panel */}
-        <div className={`${activeTab === "cart" ? "flex flex-1" : "hidden"} lg:flex lg:flex-none flex-col overflow-hidden`}>
+        <div className={`${activeTab === "cart" ? "flex flex-1" : "hidden"} lg:flex lg:flex-none flex-col min-h-0 overflow-hidden`}>
           <CartSummary cart={cart} />
         </div>
 

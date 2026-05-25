@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Priority, StoreId, UserPreferences } from "../types";
 import { PRIORITY_LABELS, STORE_LABELS } from "../types";
 import { savePreferences } from "../api/client";
@@ -12,6 +12,8 @@ const STORE_DOTS: Record<StoreId, string> = {
   vivanda:   "bg-pink-400",
   tottus:    "bg-emerald-500",
 };
+
+type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 interface Props {
   preferences: UserPreferences;
@@ -53,33 +55,44 @@ function Toggle({
 }
 
 export function PreferencesPanel({ preferences, onChange }: Props) {
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, []);
+
+  function queueSave(next: UserPreferences) {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    setSaveStatus("saving");
+    saveTimerRef.current = setTimeout(async () => {
+      try {
+        const updated = await savePreferences(next);
+        onChange(updated);
+        setSaveStatus("saved");
+      } catch {
+        setSaveStatus("error");
+      }
+    }, 500);
+  }
+
+  function updatePreferences(next: UserPreferences) {
+    onChange(next);
+    queueSave(next);
+  }
 
   function toggleStore(store: StoreId) {
     const current = preferences.preferred_stores;
     const updated = current.includes(store)
       ? current.filter((s) => s !== store)
       : [...current, store];
-    onChange({ ...preferences, preferred_stores: updated });
-  }
-
-  async function handleSave() {
-    setSaving(true);
-    try {
-      const updated = await savePreferences(preferences);
-      onChange(updated);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2_000);
-    } catch {
-      // use in-memory preferences
-    } finally {
-      setSaving(false);
-    }
+    updatePreferences({ ...preferences, preferred_stores: updated });
   }
 
   return (
-    <aside className="w-full lg:w-64 flex flex-col bg-white border-r border-[#E8EBED] shrink-0">
+    <aside className="w-full lg:w-64 h-full max-h-full flex flex-col min-h-0 overflow-hidden bg-white border-r border-[#E8EBED] shrink-0">
 
       {/* Header */}
       <div className="px-5 pt-5 pb-4 border-b border-[#F0F2F3]">
@@ -89,7 +102,7 @@ export function PreferencesPanel({ preferences, onChange }: Props) {
       </div>
 
       {/* Body */}
-      <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
+      <div className="flex-1 basis-0 min-h-0 overflow-y-auto overscroll-contain px-5 pt-5 pb-6 space-y-6">
 
         {/* ── Tiendas ─────────────────────────────────────────────────── */}
         <section>
@@ -141,6 +154,13 @@ export function PreferencesPanel({ preferences, onChange }: Props) {
         <section className="space-y-3">
           <SectionLabel>Prioridades</SectionLabel>
 
+          <div className="rounded-2xl bg-mint-50 border border-mint-100 px-3 py-3">
+            <p className="text-[12px] font-semibold text-mint-800">Regla general</p>
+            <p className="text-[11px] text-mint-700/80 leading-snug mt-1">
+              Estas preferencias son tu punto de partida. Si escribes algo especifico en el chat, como "barato" o una marca concreta, tambien se considera en esa busqueda.
+            </p>
+          </div>
+
           <div>
             <label className="text-xs font-medium text-slate-500 block mb-1.5">
               Precio
@@ -148,7 +168,7 @@ export function PreferencesPanel({ preferences, onChange }: Props) {
             <select
               value={preferences.price_priority}
               onChange={(e) =>
-                onChange({ ...preferences, price_priority: e.target.value as Priority })
+                updatePreferences({ ...preferences, price_priority: e.target.value as Priority })
               }
               className="w-full text-[13px] border border-[#DDE3E6] rounded-xl px-3 py-2 text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-mint-400 focus:border-transparent appearance-none cursor-pointer"
             >
@@ -156,6 +176,9 @@ export function PreferencesPanel({ preferences, onChange }: Props) {
                 <option key={p} value={p}>{PRIORITY_LABELS[p]}</option>
               ))}
             </select>
+            <p className="text-[11px] text-slate-400 mt-1.5 leading-snug">
+              Alta favorece el menor precio por kg, litro o unidad. Baja permite pagar mas si otro factor encaja mejor.
+            </p>
           </div>
 
           <div>
@@ -165,7 +188,7 @@ export function PreferencesPanel({ preferences, onChange }: Props) {
             <select
               value={preferences.brand_priority}
               onChange={(e) =>
-                onChange({ ...preferences, brand_priority: e.target.value as Priority })
+                updatePreferences({ ...preferences, brand_priority: e.target.value as Priority })
               }
               className="w-full text-[13px] border border-[#DDE3E6] rounded-xl px-3 py-2 text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-mint-400 focus:border-transparent appearance-none cursor-pointer"
             >
@@ -173,6 +196,9 @@ export function PreferencesPanel({ preferences, onChange }: Props) {
                 <option key={p} value={p}>{PRIORITY_LABELS[p]}</option>
               ))}
             </select>
+            <p className="text-[11px] text-slate-400 mt-1.5 leading-snug">
+              Alta da mas peso a coincidencias de marca detectada o preferida. Media balancea marca con precio y presentacion.
+            </p>
           </div>
         </section>
 
@@ -180,19 +206,20 @@ export function PreferencesPanel({ preferences, onChange }: Props) {
         <section className="space-y-4">
           <SectionLabel>Opciones</SectionLabel>
 
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center justify-between gap-4 rounded-2xl bg-slate-50 border border-slate-100 px-3 py-3 opacity-80">
             <div className="min-w-0">
-              <p className="text-[13px] font-medium text-slate-700 leading-snug">
+              <div className="flex items-center gap-2">
+                <p className="text-[13px] font-medium text-slate-500 leading-snug">
                 Sustituciones
-              </p>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                Permitir productos similares
+                </p>
+                <span className="text-[9px] font-semibold text-slate-400 bg-white border border-slate-200 rounded-full px-1.5 py-0.5">
+                  En preparacion
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1 leading-snug">
+                Esta opcion esta visible como futura mejora. Hoy la sustitucion depende principalmente de lo que escribes en el chat.
               </p>
             </div>
-            <Toggle
-              checked={preferences.allow_substitutions}
-              onChange={(v) => onChange({ ...preferences, allow_substitutions: v })}
-            />
           </div>
 
           <div className="flex items-center justify-between gap-4">
@@ -200,22 +227,22 @@ export function PreferencesPanel({ preferences, onChange }: Props) {
               <p className="text-[13px] font-medium text-slate-700 leading-snug">
                 Marcas conocidas
               </p>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                Solo marcas reconocidas
+              <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">
+                Penaliza productos donde no se pudo detectar una marca clara.
               </p>
             </div>
             <Toggle
               checked={preferences.known_brands_only}
-              onChange={(v) => onChange({ ...preferences, known_brands_only: v })}
+              onChange={(v) => updatePreferences({ ...preferences, known_brands_only: v })}
             />
           </div>
         </section>
 
         {/* ── Candidatos (slider) ─────────────────────────────────────── */}
         <section>
-          <SectionLabel>Candidatos por producto</SectionLabel>
+          <SectionLabel>Opciones evaluadas</SectionLabel>
           <div className="flex items-center justify-between mb-3">
-            <span className="text-[13px] font-medium text-slate-600">Opciones a evaluar</span>
+            <span className="text-[13px] font-medium text-slate-600">Productos a comparar</span>
             <span className="text-sm font-semibold text-mint-600 bg-mint-50 border border-mint-200 w-8 h-7 flex items-center justify-center rounded-lg">
               {preferences.max_candidates_per_product}
             </span>
@@ -226,7 +253,7 @@ export function PreferencesPanel({ preferences, onChange }: Props) {
             max={10}
             value={preferences.max_candidates_per_product}
             onChange={(e) =>
-              onChange({
+              updatePreferences({
                 ...preferences,
                 max_candidates_per_product: Number(e.target.value),
               })
@@ -236,23 +263,35 @@ export function PreferencesPanel({ preferences, onChange }: Props) {
             <span>Menos</span>
             <span>Más</span>
           </div>
+          <p className="text-[11px] text-slate-400 mt-2 leading-snug">
+            Mas opciones aumenta alternativas y detalle, pero puede hacer la busqueda un poco mas lenta.
+          </p>
         </section>
 
       </div>
 
-      {/* ── Save button ─────────────────────────────────────────────────── */}
-      <div className="p-5 border-t border-[#F0F2F3]">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className={`w-full text-[13px] font-semibold rounded-full py-2.5 disabled:opacity-60 disabled:cursor-not-allowed ${
-            saved
-              ? "bg-mint-50 text-mint-700 border border-mint-200"
-              : "bg-mint-500 text-white hover:bg-mint-600 shadow-[0_2px_14px_rgba(20,213,181,0.30)] hover:shadow-[0_4px_20px_rgba(20,213,181,0.40)]"
-          }`}
-        >
-          {saving ? "Guardando…" : saved ? "✓ Guardado" : "Guardar cambios"}
-        </button>
+      {/* ── Autosave status ──────────────────────────────────────────────── */}
+      <div className="shrink-0 p-5 border-t border-[#F0F2F3] bg-white">
+        <div className={`w-full rounded-2xl px-3 py-3 border ${
+          saveStatus === "error"
+            ? "bg-red-50 border-red-100 text-red-600"
+            : saveStatus === "saving"
+              ? "bg-amber-50 border-amber-100 text-amber-700"
+              : "bg-mint-50 border-mint-100 text-mint-700"
+        }`}>
+          <p className="text-[12px] font-semibold">
+            {saveStatus === "saving"
+              ? "Guardando preferencias..."
+              : saveStatus === "error"
+                ? "No se pudo guardar"
+                : "Preferencias autoguardadas"}
+          </p>
+          <p className="text-[11px] opacity-75 mt-0.5 leading-snug">
+            {saveStatus === "error"
+              ? "Revisa que el backend este activo antes de buscar."
+              : "Los cambios se aplican en la siguiente busqueda."}
+          </p>
+        </div>
       </div>
 
     </aside>

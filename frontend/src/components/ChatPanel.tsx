@@ -9,6 +9,17 @@ type Message =
   | { role: "assistant"; response: ChatResponse; id: number }
   | { role: "error"; text: string; id: number };
 
+type SpeechRecognitionLike = {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  onresult: ((e: SpeechRecognitionEvent) => void) | null;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+};
+
 interface Props {
   onCartUpdate: (cart: CartRecommendation | null) => void;
 }
@@ -26,7 +37,7 @@ const LOADING_STEPS = [
   "Armando tu carrito optimizado…",
 ];
 
-const SpeechRecognitionClass: (new () => SpeechRecognition) | undefined =
+const SpeechRecognitionClass: (new () => SpeechRecognitionLike) | undefined =
   (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
 
 function CheckIcon() {
@@ -136,7 +147,7 @@ export function ChatPanel({ onCartUpdate }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const loadingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const baseInputRef = useRef("");
 
   const startLoadingCycle = useCallback(() => {
@@ -166,7 +177,7 @@ export function ChatPanel({ onCartUpdate }: Props) {
 
   function startListening() {
     if (!SpeechRecognitionClass || loading) return;
-    const recognition = new SpeechRecognitionClass() as SpeechRecognition;
+    const recognition = new SpeechRecognitionClass();
     recognition.lang = "es-PE";
     recognition.interimResults = true;
     recognition.continuous = false;
@@ -236,7 +247,7 @@ export function ChatPanel({ onCartUpdate }: Props) {
   }
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 bg-[#F7F8F8] relative">
+    <div className="flex-1 flex flex-col min-w-0 min-h-0 bg-[#F7F8F8] relative">
 
       {/* ── Debug slide-over ──────────────────────────────────────────────── */}
       {debugData && (
@@ -246,7 +257,7 @@ export function ChatPanel({ onCartUpdate }: Props) {
             onClick={() => setDebugData(null)}
           />
           <div
-            className="fixed inset-y-0 right-0 z-50 w-full sm:w-[700px] bg-white border-l border-[#EDF0F2] shadow-[−20px_0_60px_rgba(0,0,0,0.08)]"
+            className="fixed inset-y-0 right-0 z-50 w-full sm:w-[700px] bg-white border-l border-[#EDF0F2] shadow-[−20px_0_60px_rgba(0,0,0,0.08)] overflow-hidden"
             style={{ animation: "slideInRight 0.25s cubic-bezier(0.32,0.72,0,1) both" }}
           >
             <DebugPanel debug={debugData} onClose={() => setDebugData(null)} />
@@ -262,7 +273,7 @@ export function ChatPanel({ onCartUpdate }: Props) {
       </div>
 
       {/* ── Messages ──────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
+      <div className="flex-1 min-h-0 overflow-y-auto px-6 py-6 space-y-4 overscroll-contain">
 
         {messages.length === 0 && (
           /* ── Welcome screen ──────────────────────────────────────── */

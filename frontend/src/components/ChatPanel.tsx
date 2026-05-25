@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import type { CartRecommendation, ChatResponse, ShoppingIntentItem } from "../types";
+import type { CartRecommendation, ChatResponse, PipelineDebug, ShoppingIntentItem } from "../types";
 import { postChat } from "../api/client";
 import { CandidateProductsTable } from "./CandidateProductsTable";
+import { DebugPanel } from "./DebugPanel";
 
 type Message =
   | { role: "user"; text: string; id: number }
@@ -68,7 +69,13 @@ function IntentSummary({ items }: { items: ShoppingIntentItem[] }) {
   );
 }
 
-function AssistantMessage({ response }: { response: ChatResponse }) {
+function AssistantMessage({
+  response,
+  onViewDebug,
+}: {
+  response: ChatResponse;
+  onViewDebug?: () => void;
+}) {
   const items = response.intent?.shopping_intent ?? [];
   const hasCart = (response.cart?.cart.length ?? 0) > 0;
 
@@ -101,6 +108,19 @@ function AssistantMessage({ response }: { response: ChatResponse }) {
           ⚠ {w}
         </p>
       ))}
+
+      {response.pipeline_debug && onViewDebug && (
+        <button
+          onClick={onViewDebug}
+          className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-mint-600 transition-colors duration-150 mt-1 pt-1"
+        >
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.4"/>
+            <path d="M8 7v4M8 5v.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+          </svg>
+          Ver análisis detallado
+        </button>
+      )}
     </div>
   );
 }
@@ -111,6 +131,7 @@ export function ChatPanel({ onCartUpdate }: Props) {
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const [listening, setListening] = useState(false);
+  const [debugData, setDebugData] = useState<PipelineDebug | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const loadingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -210,7 +231,23 @@ export function ChatPanel({ onCartUpdate }: Props) {
   }
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 bg-[#F7F8F8]">
+    <div className="flex-1 flex flex-col min-w-0 bg-[#F7F8F8] relative">
+
+      {/* ── Debug slide-over ──────────────────────────────────────────────── */}
+      {debugData && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px]"
+            onClick={() => setDebugData(null)}
+          />
+          <div
+            className="fixed inset-y-0 right-0 z-50 w-full sm:w-[700px] bg-white border-l border-[#EDF0F2] shadow-[−20px_0_60px_rgba(0,0,0,0.08)]"
+            style={{ animation: "slideInRight 0.25s cubic-bezier(0.32,0.72,0,1) both" }}
+          >
+            <DebugPanel debug={debugData} onClose={() => setDebugData(null)} />
+          </div>
+        </>
+      )}
 
       {/* ── Panel header ──────────────────────────────────────────────── */}
       <div className="px-6 py-3.5 border-b border-[#E8EBED] bg-white">
@@ -295,7 +332,14 @@ export function ChatPanel({ onCartUpdate }: Props) {
           return (
             <div key={msg.id} className="flex justify-start">
               <div className="max-w-sm bg-white rounded-2xl rounded-tl-none px-4 py-3 shadow-[0_2px_16px_rgba(0,0,0,0.07)]">
-                <AssistantMessage response={msg.response} />
+                <AssistantMessage
+                  response={msg.response}
+                  onViewDebug={
+                    msg.response.pipeline_debug
+                      ? () => setDebugData(msg.response.pipeline_debug!)
+                      : undefined
+                  }
+                />
               </div>
             </div>
           );

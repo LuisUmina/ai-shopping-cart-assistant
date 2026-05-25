@@ -142,6 +142,21 @@ class FilteringService:
             return 0.5
         return 1.0 if are_compatible(product_unit, requested_unit) else 0.0
 
+    def score_breakdown(
+        self,
+        candidate: ProductCandidate,
+        intent_item: ShoppingIntentItem,
+        preferences: UserPreferences,
+    ) -> dict[str, float]:
+        """Return individual filter component scores. Used only for debug output."""
+        return {
+            "title":    self._title_score(candidate.title, intent_item.product_query),
+            "brand":    self._brand_score(candidate, intent_item, preferences),
+            "category": self._category_score(candidate.category, intent_item.product_query),
+            "unit":     self._unit_score(candidate.quantity_unit, intent_item.unit),
+            "final":    self.score(candidate, intent_item, preferences),
+        }
+
 # ── Module-level helper ───────────────────────────────────────────────────────
 
 def _has_negative_keyword(title: str) -> bool:

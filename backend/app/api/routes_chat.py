@@ -10,6 +10,7 @@ from app.dependencies import (
     get_scraping_service,
 )
 from app.models.cart_models import CartRecommendation
+from app.models.debug_models import CandidateDebug, PipelineDebug, QueryDebug
 from app.models.intent_models import ShoppingIntent
 from app.models.product_models import ProductCandidate
 from app.services.cart_builder import CartBuilder
@@ -36,6 +37,7 @@ class ChatResponse(BaseModel):
     cart: CartRecommendation | None = None
     candidate_products: dict[str, list[ProductCandidate]] = {}
     warnings: list[str] = []
+    pipeline_debug: PipelineDebug | None = None
 
 
 @router.post("/chat", response_model=ChatResponse)
@@ -88,6 +90,47 @@ async def chat(
             + ["No se pudo generar la explicación del carrito."]
         })
 
+    # Build pipeline debug data (additive — does not affect the pipeline above)
+    query_debugs: list[QueryDebug] = []
+    for item in intent.shopping_intent:
+        raw = raw_results.get(item.product_query, [])
+        ranked = ranked_per_query[item.product_query]
+
+        scraped_per_store: dict[str, int] = {}
+        for c in raw:
+            scraped_per_store[c.store.value] = scraped_per_store.get(c.store.value, 0) + 1
+
+        candidates_debug: list[CandidateDebug] = []
+        for c in ranked:
+            fs = filtering_service.score_breakdown(c, item, preferences)
+            rs = ranking_service.score_breakdown(c, item, preferences, ranked)
+            candidates_debug.append(CandidateDebug(
+                title=c.title,
+                store=c.store,
+                brand=c.brand,
+                price=round(c.price, 2),
+                unit_price=round(c.unit_price, 4),
+                filter_title=round(fs["title"], 3),
+                filter_brand=round(fs["brand"], 3),
+                filter_category=round(fs["category"], 3),
+                filter_unit=round(fs["unit"], 3),
+                filter_score=round(fs["final"], 3),
+                rank_relevance=round(rs["relevance"], 3),
+                rank_price=round(rs["price"], 3),
+                rank_unit=round(rs["unit"], 3),
+                rank_brand=round(rs["brand"], 3),
+                rank_store=round(rs["store"], 3),
+                rank_final=round(rs["final"], 3),
+            ))
+
+        query_debugs.append(QueryDebug(
+            query=item.product_query,
+            scraped_total=len(raw),
+            scraped_per_store=scraped_per_store,
+            passed_filter=len(ranked),
+            candidates=candidates_debug,
+        ))
+
     # Warnings live inside cart.warnings — don't duplicate them at the top level.
     # ChatResponse.warnings is reserved for pipeline-level issues (e.g. a store
     # that was completely unreachable), not product-level cart warnings.
@@ -95,4 +138,5 @@ async def chat(
         intent=intent,
         cart=recommendation,
         candidate_products=ranked_per_query,
+        pipeline_debug=PipelineDebug(queries=query_debugs),
     )

@@ -64,11 +64,43 @@ export interface UserPreferences {
   max_candidates_per_product: number;
 }
 
+export interface CandidateDebug {
+  title: string;
+  store: StoreId;
+  brand?: string | null;
+  price: number;
+  unit_price: number;
+  filter_title: number;
+  filter_brand: number;
+  filter_category: number;
+  filter_unit: number;
+  filter_score: number;
+  rank_relevance: number;
+  rank_price: number;
+  rank_unit: number;
+  rank_brand: number;
+  rank_store: number;
+  rank_final: number;
+}
+
+export interface QueryDebug {
+  query: string;
+  scraped_total: number;
+  scraped_per_store: Record<string, number>;
+  passed_filter: number;
+  candidates: CandidateDebug[];
+}
+
+export interface PipelineDebug {
+  queries: QueryDebug[];
+}
+
 export interface ChatResponse {
   intent: ShoppingIntent | null;
   cart: CartRecommendation | null;
   candidate_products: Record<string, ProductCandidate[]>;
   warnings: string[];
+  pipeline_debug: PipelineDebug | null;
 }
 
 export const STORE_LABELS: Record<StoreId, string> = {

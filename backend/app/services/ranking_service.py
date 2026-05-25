@@ -72,6 +72,23 @@ class RankingService:
         )
         return max(0.0, min(1.0, raw))
 
+    def score_breakdown(
+        self,
+        candidate: ProductCandidate,
+        intent_item: ShoppingIntentItem,
+        preferences: UserPreferences,
+        peer_candidates: list[ProductCandidate],
+    ) -> dict[str, float]:
+        """Return individual ranking component scores. Used only for debug output."""
+        return {
+            "relevance": _relevance_score(candidate, intent_item),
+            "price":     _price_score(candidate, peer_candidates),
+            "unit":      _unit_match_score(candidate, intent_item),
+            "brand":     _brand_score(candidate, intent_item, preferences),
+            "store":     _store_score(candidate, preferences),
+            "final":     self.score(candidate, intent_item, preferences, peer_candidates),
+        }
+
 
 # ── Weight computation ────────────────────────────────────────────────────────
 

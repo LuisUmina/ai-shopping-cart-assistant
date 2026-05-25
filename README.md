@@ -72,6 +72,76 @@ cd backend
 
 Current coverage: **289 tests passing** (models, parsers, intent extraction, scraper base, store scrapers, filtering, ranking, cart builder, cart reasoning).
 
+## Tiendas soportadas y metadatos
+
+| Tienda | Método de extracción | Título | Marca | Categoría | Precio | Stock |
+|--------|---------------------|:------:|:-----:|:---------:|:------:|:-----:|
+| Plaza Vea | Playwright + `data-ga-*` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Tottus | Playwright + `__NEXT_DATA__` (Next.js) | ✅ | ✅ | ❌ | ✅ | — |
+| Vivanda | Playwright + JSON-LD (`ItemList`) | ✅ | ✅ | ❌ | ✅ | ✅ |
+| Metro | Playwright + selectores VTEX | ✅ | — | ❌ | ✅ | — |
+
+## Motor de filtrado y ranking
+
+### Filtrado (`FilteringService`)
+
+Cada candidato recibe un score de relevancia [0, 1]. Los que quedan por debajo de **0.55** se descartan antes del ranking.
+
+```
+score = título    × 0.55
+      + categoría × 0.10
+      + marca     × 0.15
+      + unidad    × 0.10
+      + stock     × 0.10
+      − penalización por keywords negativos (accesorios, utensilios…)
+```
+
+### Ranking (`RankingService`)
+
+Los candidatos que superan el filtro se ordenan con una fórmula ponderada cuyos pesos varían según `price_priority` y `brand_priority` del usuario.
+
+```
+score_final =
+    relevancia  × w_relevancia   (~35 %)
+  + precio      × w_precio       (~25 %, sube con price_priority = high)
+  + unidad      × w_unidad       (~15 %)
+  + marca       × w_marca        (~15 %, sube con brand_priority = high)
+  + stock       × w_stock        (~ 5 %)
+  + tienda      × w_tienda       (~ 5 %)
+```
+
+La relevancia dentro del ranking se calcula así:
+
+```
+relevancia = título × 0.90 + bonus_categoría (máx. 0.10)
+```
+
+### Por qué la categoría tiene peso bajo (anti-sesgo)
+
+Solo Plaza Vea expone metadatos de categoría estructurados (`data-ga-category`).
+Las demás tiendas no tienen ese campo en su HTML. Si la categoría pesara mucho,
+Plaza Vea siempre ganaría — no por tener el mejor producto, sino por tener más
+metadatos en su página.
+
+Diseño actual:
+
+| Etapa | Peso de categoría | Efecto |
+|-------|------------------|--------|
+| Filtrado | 0.10 | Diferencia máxima de ±0.05 por categoría |
+| Ranking | bonus ≤ 0.10 | Una diferencia de precio del 5 % ya invierte el resultado |
+
+Con este diseño, Tottus, Metro y Vivanda compiten en igualdad de condiciones
+cuando su precio o presentación es mejor.
+
+### Carrito mixto vs. carrito de una sola tienda
+
+El carrito es **mixto**: por cada ítem pedido se elige el mejor candidato global
+sin importar de qué tienda venga. El arroz puede venir de Metro y la leche de
+Vivanda si eso resulta más barato o más ajustado a lo pedido.
+
+Una lógica de "elige la tienda más completa y compra todo ahí" no está
+implementada en esta versión del MVP.
+
 ## Development phases
 
 | Phase | Status | Description |

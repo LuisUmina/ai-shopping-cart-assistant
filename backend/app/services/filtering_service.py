@@ -5,8 +5,8 @@ Scores product candidates for relevance against a shopping intent item and
 user preferences, then returns only the top-N candidates above the threshold.
 
 Relevance formula (weights sum to 1.0):
-    score = title_score  * 0.40
-          + category_score * 0.25
+    score = title_score    * 0.55
+          + category_score * 0.10
           + brand_score    * 0.15
           + unit_score     * 0.10
           + avail_score    * 0.10
@@ -14,6 +14,10 @@ Relevance formula (weights sum to 1.0):
     clamped to [0.0, 1.0]
 
 Products scoring below MIN_RELEVANCE_SCORE (0.55) are rejected.
+
+Category weight is intentionally low (0.10) because only Plaza Vea exposes
+structured category metadata. Giving it more weight would systematically
+disadvantage stores whose scrapers extract less metadata.
 """
 
 from app.models.common import Availability, QuantityUnit
@@ -68,8 +72,8 @@ class FilteringService:
     ) -> float:
         """Compute relevance score in [0.0, 1.0] for a single candidate."""
         raw = (
-            self._title_score(candidate.title, intent_item.product_query) * 0.40
-            + self._category_score(candidate.category, intent_item.product_query) * 0.25
+            self._title_score(candidate.title, intent_item.product_query) * 0.55
+            + self._category_score(candidate.category, intent_item.product_query) * 0.10
             + self._brand_score(candidate, intent_item, preferences) * 0.15
             + self._unit_score(candidate.quantity_unit, intent_item.unit) * 0.10
             + self._availability_score(candidate.availability) * 0.10

@@ -6,7 +6,7 @@ sorted best-first.  Weights adjust automatically based on user priorities.
 
 Base formula (weights sum to 1.0 after normalization):
     final_score =
-        relevance_score      * w_relevance   (title + category match)
+        relevance_score      * w_relevance   (title match + small category bonus)
       + price_score          * w_price       (lower unit price → higher score)
       + unit_match_score     * w_unit        (overbuying penalty)
       + brand_score          * w_brand       (brand alignment)
@@ -14,6 +14,10 @@ Base formula (weights sum to 1.0 after normalization):
       + store_preference     * w_store
 
 price_priority / brand_priority (from UserPreferences or intent) shift the weights.
+
+Anti-bias note: relevance_score is driven 90% by title match and only 10%
+by a category bonus. This prevents stores with richer metadata (Plaza Vea
+exposes data-ga-category; others don't) from gaining an unfair advantage.
 """
 
 from app.models.common import Availability, Priority, QuantityUnit
@@ -96,7 +100,12 @@ def _compute_weights(
 # ── Component scorers ─────────────────────────────────────────────────────────
 
 def _relevance_score(candidate: ProductCandidate, intent_item: ShoppingIntentItem) -> float:
-    """Title + category match — same logic as FilteringService for consistency."""
+    """
+    Title match is the primary signal (90% weight).
+    A matching category adds a small bonus (up to 0.10) — this keeps category
+    useful as a disambiguation signal without creating a systematic advantage
+    for stores that expose richer metadata than others.
+    """
     query_tokens = tokenize(intent_item.product_query)
     if not query_tokens:
         return 0.5
@@ -105,13 +114,13 @@ def _relevance_score(candidate: ProductCandidate, intent_item: ShoppingIntentIte
     title_hits = sum(1 for t in query_tokens if t in title_norm)
     title_s = title_hits / len(query_tokens)
 
+    cat_bonus = 0.0
     if candidate.category:
         cat_norm = normalize_for_comparison(candidate.category)
-        cat_s = 1.0 if any(t in cat_norm for t in query_tokens) else 0.0
-    else:
-        cat_s = 0.5  # neutral — many stores don't expose category
+        if any(t in cat_norm for t in query_tokens):
+            cat_bonus = 0.10
 
-    return title_s * 0.60 + cat_s * 0.40
+    return min(1.0, title_s * 0.90 + cat_bonus)
 
 
 def _price_score(

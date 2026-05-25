@@ -1,16 +1,35 @@
+import { useState } from "react";
 import type { CartRecommendation } from "../types";
 import { ProductCard } from "./ProductCard";
+import { CheckoutPanel } from "./CheckoutPanel";
 
 interface Props {
   cart: CartRecommendation | null;
 }
 
 export function CartSummary({ cart }: Props) {
+  const [showCheckout, setShowCheckout] = useState(false);
   const isEmpty = !cart || cart.cart.length === 0;
   const itemCount = cart?.cart.length ?? 0;
 
   return (
-    <aside className="w-80 flex flex-col bg-white border-l border-[#E8EBED] shrink-0">
+    <aside className="w-80 flex flex-col bg-white border-l border-[#E8EBED] shrink-0 relative">
+
+      {/* ── Checkout slide-over ──────────────────────────────────────────── */}
+      {showCheckout && cart && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px]"
+            onClick={() => setShowCheckout(false)}
+          />
+          <div
+            className="fixed inset-y-0 right-0 z-50 w-full sm:w-[440px] bg-white border-l border-[#EDF0F2] shadow-[-20px_0_60px_rgba(0,0,0,0.08)]"
+            style={{ animation: "slideInRight 0.25s cubic-bezier(0.32,0.72,0,1) both" }}
+          >
+            <CheckoutPanel cart={cart} onClose={() => setShowCheckout(false)} />
+          </div>
+        </>
+      )}
 
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <div className="px-5 py-3.5 border-b border-[#F0F2F3] flex items-center justify-between">
@@ -48,18 +67,16 @@ export function CartSummary({ cart }: Props) {
 
       </div>
 
-      {/* ── Footer — total + warnings ────────────────────────────────────── */}
+      {/* ── Footer — total + warnings + CTA ─────────────────────────────── */}
       {!isEmpty && (
         <div className="border-t border-[#F0F2F3] bg-white px-5 py-4 space-y-3">
 
           {/* Total */}
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-slate-500">Total estimado</span>
-            <div className="text-right">
-              <span className="text-lg font-bold text-[#1B1D1F] tracking-tight">
-                S/ {cart!.total_estimated_cost.toFixed(2)}
-              </span>
-            </div>
+            <span className="text-lg font-bold text-[#1B1D1F] tracking-tight">
+              S/ {cart!.total_estimated_cost.toFixed(2)}
+            </span>
           </div>
 
           {/* Warnings */}
@@ -83,6 +100,17 @@ export function CartSummary({ cart }: Props) {
               ))}
             </ul>
           )}
+
+          {/* Finalizar Compra CTA */}
+          <button
+            onClick={() => setShowCheckout(true)}
+            className="w-full flex items-center justify-center gap-2 bg-mint-500 text-white text-[13px] font-semibold rounded-full py-3 hover:bg-mint-600 shadow-[0_4px_20px_rgba(20,213,181,0.30)] hover:shadow-[0_6px_28px_rgba(20,213,181,0.42)] hover:-translate-y-0.5 transition-all duration-200"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M13 5l-6 6-3-3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Finalizar Compra
+          </button>
 
         </div>
       )}

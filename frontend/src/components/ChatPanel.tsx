@@ -132,6 +132,7 @@ export function ChatPanel({ onCartUpdate }: Props) {
   const [loadingStep, setLoadingStep] = useState(0);
   const [listening, setListening] = useState(false);
   const [debugData, setDebugData] = useState<PipelineDebug | null>(null);
+  const [activeMessageId, setActiveMessageId] = useState<number | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const loadingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -209,8 +210,12 @@ export function ChatPanel({ onCartUpdate }: Props) {
 
     try {
       const response = await postChat(text);
-      setMessages((prev) => [...prev, { role: "assistant", response, id: nextId() }]);
-      onCartUpdate(response.cart);
+      const newId = nextId();
+      setMessages((prev) => [...prev, { role: "assistant", response, id: newId }]);
+      if (response.cart) {
+        onCartUpdate(response.cart);
+        setActiveMessageId(newId);
+      }
     } catch (err) {
       setMessages((prev) => [
         ...prev,
@@ -329,9 +334,31 @@ export function ChatPanel({ onCartUpdate }: Props) {
             );
           }
 
+          const hasCart = (msg.response.cart?.cart.length ?? 0) > 0;
+          const isActive = activeMessageId === msg.id;
+
           return (
-            <div key={msg.id} className="flex justify-start">
-              <div className="max-w-sm bg-white rounded-2xl rounded-tl-none px-4 py-3 shadow-[0_2px_16px_rgba(0,0,0,0.07)]">
+            <div key={msg.id} className="flex justify-start relative">
+              {/* Active cart indicator dot */}
+              {hasCart && isActive && (
+                <span className="absolute -left-1 top-3 w-2 h-2 bg-mint-500 rounded-full border-2 border-[#F7F8F8] z-10" />
+              )}
+              <div
+                onClick={
+                  hasCart && !isActive
+                    ? () => {
+                        onCartUpdate(msg.response.cart!);
+                        setActiveMessageId(msg.id);
+                      }
+                    : undefined
+                }
+                title={hasCart && !isActive ? "Ver este carrito en el panel derecho" : undefined}
+                className={`max-w-sm bg-white rounded-2xl rounded-tl-none px-4 py-3 shadow-[0_2px_16px_rgba(0,0,0,0.07)] transition-all duration-200 ${
+                  hasCart && !isActive
+                    ? "cursor-pointer hover:ring-2 hover:ring-mint-200"
+                    : ""
+                } ${hasCart && isActive ? "ring-2 ring-mint-400" : ""}`}
+              >
                 <AssistantMessage
                   response={msg.response}
                   onViewDebug={

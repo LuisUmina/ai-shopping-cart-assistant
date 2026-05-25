@@ -25,10 +25,24 @@ const LOADING_STEPS = [
   "Armando tu carrito optimizado…",
 ];
 
+const SpeechRecognitionClass: (new () => SpeechRecognition) | undefined =
+  (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
+
 function CheckIcon() {
   return (
     <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
       <path d="M1.5 5.5l2.5 2.5 5.5-5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function MicIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 2a3.5 3.5 0 013.5 3.5v6a3.5 3.5 0 01-7 0V5.5A3.5 3.5 0 0112 2z" />
+      <path d="M6.5 12a5.5 5.5 0 0011 0" />
+      <path d="M12 18v3" />
+      <path d="M9 21h6" />
     </svg>
   );
 }
@@ -96,9 +110,12 @@ export function ChatPanel({ onCartUpdate }: Props) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
+  const [listening, setListening] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const loadingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const baseInputRef = useRef("");
 
   const startLoadingCycle = useCallback(() => {
     setLoadingStep(0);
@@ -119,8 +136,46 @@ export function ChatPanel({ onCartUpdate }: Props) {
   }, [messages]);
 
   useEffect(() => {
-    return () => stopLoadingCycle();
+    return () => {
+      stopLoadingCycle();
+      recognitionRef.current?.stop();
+    };
   }, [stopLoadingCycle]);
+
+  function startListening() {
+    if (!SpeechRecognitionClass || loading) return;
+    const recognition = new SpeechRecognitionClass() as SpeechRecognition;
+    recognition.lang = "es-PE";
+    recognition.interimResults = true;
+    recognition.continuous = false;
+    baseInputRef.current = input;
+
+    recognition.onresult = (e: SpeechRecognitionEvent) => {
+      const transcript = Array.from(e.results)
+        .map((r) => r[0].transcript)
+        .join("");
+      const base = baseInputRef.current;
+      const sep = base && !base.endsWith(" ") ? " " : "";
+      setInput(base + (base ? sep : "") + transcript);
+    };
+    recognition.onend = () => setListening(false);
+    recognition.onerror = () => setListening(false);
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setListening(true);
+  }
+
+  function stopListening() {
+    recognitionRef.current?.stop();
+    recognitionRef.current = null;
+    setListening(false);
+  }
+
+  function toggleMic() {
+    if (listening) stopListening();
+    else startListening();
+  }
 
   async function send() {
     const text = input.trim();
@@ -268,17 +323,34 @@ export function ChatPanel({ onCartUpdate }: Props) {
 
       {/* ── Input bar ─────────────────────────────────────────────────── */}
       <div className="px-4 py-3.5 border-t border-[#E8EBED] bg-white">
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           <input
             ref={inputRef}
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="¿Qué necesitas hoy?"
+            placeholder={listening ? "Escuchando…" : "¿Qué necesitas hoy?"}
             disabled={loading}
             className="flex-1 text-sm bg-[#F7F8F8] border border-[#DDE3E6] rounded-full px-5 py-2.5 focus:outline-none focus:ring-2 focus:ring-mint-400 focus:border-transparent focus:bg-white disabled:opacity-50 placeholder:text-slate-400"
           />
+          {SpeechRecognitionClass && (
+            <button
+              type="button"
+              onClick={toggleMic}
+              disabled={loading}
+              title={listening ? "Detener dictado" : "Dictar mensaje"}
+              aria-label={listening ? "Detener dictado" : "Dictar mensaje"}
+              style={listening ? { animation: "micRing 1.4s ease-in-out infinite" } : undefined}
+              className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${
+                listening
+                  ? "bg-red-50 text-red-500"
+                  : "bg-[#F7F8F8] text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <MicIcon />
+            </button>
+          )}
           <button
             onClick={send}
             disabled={loading || !input.trim()}
